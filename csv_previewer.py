@@ -7,6 +7,8 @@ from tkinter import filedialog as fd
 
 def clear_grid() -> None:
     if len(cells) > 0:
+        global row_num
+        row_num = 0
         for cell in cells:
             cell.destroy()
         cells.clear()
