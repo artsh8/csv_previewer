@@ -6,35 +6,33 @@ from tkinter import filedialog as fd
 
 
 def clear_grid() -> None:
-    if len(cells) > 0:
-        global row_num
-        row_num = 0
-        for cell in cells:
-            cell.destroy()
-        cells.clear()
+    global row_num
+    row_num = 0
+    for cell in cells:
+        cell.destroy()
+    cells.clear()
 
 
 def pick_delimiter(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         first = f.readline()
         second = f.readline()
-    comma_first = len(first.split(","))
-    comma_second = len(second.split(","))
-    if comma_first > 1 and comma_first == comma_second:
+    first_len = len(first.split(","))
+    second_len = len(second.split(","))
+    if first_len > 1 and first_len == second_len:
         return ","
-    semi_first = len(first.split(";"))
-    semi_second = len(second.split(";"))
-    if semi_first > 1 and semi_first == semi_second:
+    first_len = len(first.split(";"))
+    second_len = len(second.split(";"))
+    if first_len > 1 and first_len == second_len:
         return ";"
-    tab_first = len(first.split("\t"))
-    tab_second = len(second.split("\t"))
-    if tab_first > 1 and tab_first == tab_second:
+    first_len = len(first.split("\t"))
+    second_len = len(second.split("\t"))
+    if first_len > 1 and first_len == second_len:
         return "\t"
-    pipe_first = len(first.split("|"))
-    pipe_second = len(second.split("|"))
-    if pipe_first > 1 and pipe_first == pipe_second:
+    first_len = len(first.split("|"))
+    second_len = len(second.split("|"))
+    if first_len > 1 and first_len == second_len:
         return "|"
-    display_log("Невозможно подобрать разделитель по первым двум строкам файла")
     return ""
 
 
@@ -52,18 +50,23 @@ def select_file() -> None:
         initialdir="/",
         filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
     )
-    if filename:
+    if not filename:
+        return None
+
+    if len(cells) > 0:
         clear_grid()
         canvas.yview_moveto(0.0)
         canvas.xview_moveto(0.0)
-        delimiter = pick_delimiter(filename)
-        if delimiter:
-            global pages
-            pages = row_reader(filename, delimiter)
-            next_page.config(state=tk.NORMAL)
-            next_page.invoke()
-        else:
-            next_page.config(state=tk.DISABLED)
+    delimiter = pick_delimiter(filename)
+    if not delimiter:
+        next_page.config(state=tk.DISABLED)
+        display_log("Невозможно подобрать разделитель по первым двум строкам файла")
+        return None
+
+    global pages
+    pages = row_reader(filename, delimiter)
+    next_page.config(state=tk.NORMAL)
+    next_page.invoke()
 
 
 def draw_next_page() -> None:
