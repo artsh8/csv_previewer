@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 import csv
 import tkinter as tk
 from tkinter import ttk
