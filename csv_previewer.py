@@ -38,9 +38,7 @@ def pick_delimiter(path: str) -> str:
 
 def display_log(message: str) -> None:
     cell = ttk.Label(scrollable_frame, text=message)
-    global row_num
     cell.grid(row=row_num, column=0, sticky="ew")
-    row_num += 1
     cells.append(cell)
 
 
@@ -54,6 +52,7 @@ def select_file() -> None:
         return None
 
     if len(cells) > 0:
+        clipboard_button.config(state=tk.DISABLED)
         clear_grid()
         canvas.yview_moveto(0.0)
         canvas.xview_moveto(0.0)
@@ -63,10 +62,12 @@ def select_file() -> None:
         display_log("Невозможно подобрать разделитель по первым двум строкам файла")
         return None
 
-    global pages
+    global pages, current_filename
+    current_filename = filename
     pages = row_reader(filename, delimiter)
     next_page.config(state=tk.NORMAL)
     next_page.invoke()
+    clipboard_button.config(state=tk.NORMAL)
 
 
 def draw_next_page() -> None:
@@ -90,6 +91,19 @@ def row_reader(path: str, delimiter: str) -> Generator[list[str]]:
             yield row
 
 
+def drawn_text() -> str:
+    with open(current_filename, "r", encoding="utf-8") as f:
+        return "".join((f.readline() for _ in range(row_num)))
+
+
+def copy_clipboard() -> None:
+    win.clipboard_clear()
+    win.clipboard_append(drawn_text())
+
+
+win: tk.Tk
+clipboard_button: tk.Button
+current_filename: str
 canvas: tk.Canvas
 scrollable_frame: ttk.Frame
 row_num = 0
@@ -99,20 +113,29 @@ cells: list[ttk.Label] = []
 
 
 def main() -> None:
+    global win, next_page, clipboard_button, canvas, scrollable_frame
     win = tk.Tk()
     win.geometry("700x600")
     win.title("Предпросмотр csv")
-    tk.Button(win, text="Выбрать файл", command=select_file).pack(pady=5)
-    global next_page
-    next_page = tk.Button(
-        win, text="Следующая страница", command=draw_next_page, state=tk.DISABLED
+    grid_frame = tk.Frame(win)
+    grid_frame.pack(pady=5)
+    tk.Button(grid_frame, text="Выбрать файл", command=select_file).grid(
+        row=0, column=0, padx=5
     )
-    next_page.pack(pady=5)
-    global canvas
+    next_page = tk.Button(
+        grid_frame, text="Следующая страница", command=draw_next_page, state=tk.DISABLED
+    )
+    next_page.grid(row=0, column=1, padx=5)
+    clipboard_button = tk.Button(
+        grid_frame,
+        text="Копировать в буфер обмена",
+        command=copy_clipboard,
+        state=tk.DISABLED,
+    )
+    clipboard_button.grid(row=0, column=2, padx=5)
     canvas = tk.Canvas(win)
     scroll_hor = ttk.Scrollbar(win, orient="horizontal", command=canvas.xview)
     scroll_ver = ttk.Scrollbar(win, orient="vertical", command=canvas.yview)
-    global scrollable_frame
     scrollable_frame = ttk.Frame(canvas)
     scrollable_frame.bind(
         "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
